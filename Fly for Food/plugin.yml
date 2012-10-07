@@ -1,0 +1,10 @@
+name: Fly for Food
+main: at.gehirnstroem.FlyForFood
+version: 0.1.1
+permissions:
+    flyforfood.fly:
+        description: Allows a player to use a feather to fly.
+        default: true
+    flyforfood.freeflight:
+        description: If set, flying will not cause hunger.
+        default: false
