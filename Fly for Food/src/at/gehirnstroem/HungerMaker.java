@@ -1,8 +1,9 @@
 package at.gehirnstroem;
+import java.util.HashSet;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 
 public class HungerMaker implements Runnable {
 	
@@ -15,92 +16,74 @@ public class HungerMaker implements Runnable {
     @Override
     public void run() {
 
+    	HashSet<FlyingPlayer> toRemove = new HashSet<FlyingPlayer>();
+    	
     	for(int i=0; i<fff.playersInFlightMode.size(); i++)
     	{
-    		Player player = fff.playersInFlightMode.get(i);
-    		if(player.isOnline())
+    		FlyingPlayer flyingPlayer = fff.playersInFlightMode.get(i);
+    		if(flyingPlayer.thePlayer.isOnline())
     		{
-	    		if(player.getFoodLevel()<=0)
+	    		if(flyingPlayer.thePlayer.getFoodLevel()<=0)
 	    		{
-	    			player.setAllowFlight(false);
-	    			if(fff.playersInFlightMode.contains(player))
-	    			{
-	    				fff.locationsInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-	    				fff.fineFoodLevelInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-	    				fff.playersInFlightMode.remove(player);
-	    			}
-	    			player.sendMessage("You are too hungry to fly, you had to fold your wings.");
+	    			flyingPlayer.thePlayer.setAllowFlight(false);
+	    			flyingPlayer.thePlayer.sendMessage("You are too hungry to fly, you had to fold your wings.");
+	    			toRemove.add(flyingPlayer);
+	    			//Better to build hashtable to remove?
 	    		}
 	    		else
 	    		{
-    				String playerName = player.getName();
+    				String playerName = flyingPlayer.thePlayer.getName();
 	    			System.out.println("Looped "+playerName+".");
-	    			if(player.isFlying())
+	    			if(flyingPlayer.thePlayer.isFlying())
 	    			{
-	    				int playerIndex = fff.playersInFlightMode.indexOf(player);
-	    				Location lastLocation = fff.locationsInFlightMode.get(playerIndex);
-	    				Location currentLoc = player.getEyeLocation().clone();
-	    				
-	    				double newFoodLevelDouble;
-	    				
-	    				if(player.hasPermission("flyforfood.freeflight"))
+	    				Location lastLocation = flyingPlayer.lastLocation;
+	    				Location currentLoc = flyingPlayer.thePlayer.getLocation().clone();
+	    					    				
+	    				//Decrease foodlevel if needed 
+	    				if(!flyingPlayer.thePlayer.hasPermission("flyforfood.freeflight"))
 	    				{
-	    					newFoodLevelDouble = fff.fineFoodLevelInFlightMode.get(playerIndex);
-	    				}
-	    				else
-	    				{
-	    					newFoodLevelDouble = fff.fineFoodLevelInFlightMode.get(playerIndex)-(lastLocation.distance(currentLoc)/40);
+		    				double costTime = fff.getConfig().getDouble("cost_time");
+		    				double costDistance = fff.getConfig().getDouble("cost_distance");
+		    				double foodCost = ( (lastLocation.distance(currentLoc)/6000)*costDistance + (0.001*costTime) );
+	    					flyingPlayer.setFineFoodLevel(flyingPlayer.fineFoodLevel - foodCost);
+	    					System.out.println("Flying costed "+playerName+" "+foodCost+" Food.");
 	    				}
 	    				
-	    				//Calc and set new Food Level
-	    				fff.fineFoodLevelInFlightMode.set(playerIndex, newFoodLevelDouble);
-	    				
-	    				player.setFoodLevel((int) newFoodLevelDouble);
-	    				
-	    				System.out.println("Flying costed "+playerName+" "+(lastLocation.distance(currentLoc)/40)+" Food.");
-	    				//Update Location
-	    				fff.locationsInFlightMode.set(fff.playersInFlightMode.indexOf(player), currentLoc);
+	    				//Update last location
+	    				flyingPlayer.lastLocation = currentLoc;
 	    				
 	    			}
-	    			else if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.EAST_NORTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.EAST_SOUTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.NORTH).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.NORTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.NORTH_NORTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.NORTH_NORTH_WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.NORTH_WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.SOUTH).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.SOUTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.SOUTH_SOUTH_EAST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.SOUTH_SOUTH_WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.SOUTH_WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.WEST_NORTH_WEST).getType() != Material.AIR
-	    					||player.getLocation().getBlock().getRelative(BlockFace.WEST_SOUTH_WEST).getType() != Material.AIR)
+	    			else if (flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.EAST_NORTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.EAST_SOUTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.NORTH).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.NORTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.NORTH_NORTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.NORTH_NORTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.NORTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SOUTH).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SOUTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SOUTH_SOUTH_EAST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SOUTH_SOUTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SOUTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.WEST_NORTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.WEST_SOUTH_WEST).getType() != Material.AIR
+	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SELF).getType() != Material.AIR)
 	    			{
-		    			player.setAllowFlight(false);
-		    			if(fff.playersInFlightMode.contains(player))
-		    			{
-		    				fff.locationsInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-		    				fff.fineFoodLevelInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-		    				fff.playersInFlightMode.remove(player);
-		    			}
-		    			player.sendMessage("You landed.");
+	    				flyingPlayer.thePlayer.setAllowFlight(false);
+	    				flyingPlayer.thePlayer.sendMessage("You landed.");
+	    				toRemove.add(flyingPlayer);
 	    			}
 	    		}
     		}
     		else
     		{
-    			if(fff.playersInFlightMode.contains(player))
-    			{
-    				fff.locationsInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-    				fff.fineFoodLevelInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
-    				fff.playersInFlightMode.remove(player);
-    			}
+    			toRemove.add(flyingPlayer);
     		}
     		
     	}
+    	fff.playersInFlightMode.removeAll(toRemove);
     }
 }

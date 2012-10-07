@@ -1,12 +1,13 @@
 package at.gehirnstroem;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 
@@ -18,29 +19,43 @@ public class FlyForFoodEventListener implements Listener {
     	this.fff = fff;
     }
     
-	
+	@EventHandler(priority=EventPriority.HIGH)
+    public void onFoodLevelChange(FoodLevelChangeEvent event){
+
+		HumanEntity entity =  event.getEntity();        
+        if (entity instanceof Player)
+        {
+        	Player player = (Player) entity;
+        	
+        	//If food level changed, update the fine food level
+        	FlyingPlayer fp = fff.playersInFlightMode.getByPlayer(player);
+        	if(fp != null)
+        	{
+        		int foodLevelDifference = event.getFoodLevel() - player.getFoodLevel();
+        		fp.setFineFoodLevel(fp.fineFoodLevel + foodLevelDifference);
+        	}
+        }		
+		
+	}
+    
 	@EventHandler(priority=EventPriority.HIGH)
     public void onPlayerUse(PlayerInteractEvent event){
 		
 		Player player = event.getPlayer();
-		Location loc = player.getEyeLocation().clone();
-		int foodLevel = player.getFoodLevel();
 		
         if(player.getItemInHand().getType() == Material.FEATHER
            && (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) || event.getAction().equals(Action.RIGHT_CLICK_AIR)) ){
-
-            //String playerName = player.getName();
             
     		int currentFoodLevel = player.getFoodLevel();
-    		//boolean flightAllowed = player.getAllowFlight();
     		
     		if(currentFoodLevel > 0 && player.hasPermission("flyforfood.fly"))
     		{
-    			if(!fff.playersInFlightMode.contains(player))
+    			FlyingPlayer flyingPlayer = fff.playersInFlightMode.getByPlayer(player);
+    			
+    			if(flyingPlayer == null)
     			{
-    				fff.playersInFlightMode.add(player);
-    				fff.locationsInFlightMode.add(fff.playersInFlightMode.indexOf(player), loc);
-    				fff.fineFoodLevelInFlightMode.add(fff.playersInFlightMode.indexOf(player), (double) foodLevel);
+    				flyingPlayer = new FlyingPlayer(player);
+    				fff.playersInFlightMode.add(flyingPlayer);
     			}
     			
     			player.setAllowFlight(true);
@@ -49,13 +64,17 @@ public class FlyForFoodEventListener implements Listener {
     		}
     		else if (currentFoodLevel <= 0)
     		{
-    			player.setAllowFlight(false);
+    			/* Delete???
+    			 * player.setAllowFlight(false);
+    			 
+    			FlyingPlayer flyingPlayer = fff.playersInFlightMode.getByPlayer(player);
+    			
     			if(fff.playersInFlightMode.contains(player))
     			{
     				fff.locationsInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
     				fff.fineFoodLevelInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
     				fff.playersInFlightMode.remove(player);
-    			}
+    			}*/
     			player.sendMessage("You are too hungry to fly!");
     		}
         }
@@ -64,7 +83,7 @@ public class FlyForFoodEventListener implements Listener {
 	
     @EventHandler(priority=EventPriority.HIGH)
     public void onPlayerLogin(PlayerLoginEvent event){
-        System.out.println("hui");
+        //System.out.println("hui");
     }
 
 }
