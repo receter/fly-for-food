@@ -60,7 +60,8 @@ public class FlyForFoodEventListener implements Listener {
     			
     			player.setAllowFlight(true);
     			player.setFlying(true);
-    			player.sendMessage("You spread your wings, have fun and don't forget to eat!");
+    			if(fff.playerMessagesActivated)
+    				player.sendMessage(fff.playerMessageStart);
     		}
     		else if (currentFoodLevel <= 0)
     		{
@@ -75,7 +76,8 @@ public class FlyForFoodEventListener implements Listener {
     				fff.fineFoodLevelInFlightMode.remove(fff.playersInFlightMode.indexOf(player));
     				fff.playersInFlightMode.remove(player);
     			}*/
-    			player.sendMessage("You are too hungry to fly!");
+    			if(fff.playerMessagesActivated)
+    				player.sendMessage(fff.playerMessageNoFood);
     		}
         }
         

@@ -26,14 +26,15 @@ public class HungerMaker implements Runnable {
 	    		if(flyingPlayer.thePlayer.getFoodLevel()<=0)
 	    		{
 	    			flyingPlayer.thePlayer.setAllowFlight(false);
-	    			flyingPlayer.thePlayer.sendMessage("You are too hungry to fly, you had to fold your wings.");
+	    			if(fff.playerMessagesActivated)
+	    				flyingPlayer.thePlayer.sendMessage(fff.playerMessageNoFoodWhileFlying);
 	    			toRemove.add(flyingPlayer);
 	    			//Better to build hashtable to remove?
 	    		}
 	    		else
 	    		{
     				String playerName = flyingPlayer.thePlayer.getName();
-	    			System.out.println("Looped "+playerName+".");
+	    			//System.out.println("Looped "+playerName+".");
 	    			if(flyingPlayer.thePlayer.isFlying())
 	    			{
 	    				Location lastLocation = flyingPlayer.lastLocation;
@@ -42,11 +43,12 @@ public class HungerMaker implements Runnable {
 	    				//Decrease foodlevel if needed 
 	    				if(!flyingPlayer.thePlayer.hasPermission("flyforfood.freeflight"))
 	    				{
-		    				double costTime = fff.getConfig().getDouble("cost_time");
-		    				double costDistance = fff.getConfig().getDouble("cost_distance");
+		    				double costTime = fff.costTime;
+		    				double costDistance = fff.costDistance;
 		    				double foodCost = ( (lastLocation.distance(currentLoc)/6000)*costDistance + (0.001*costTime) );
 	    					flyingPlayer.setFineFoodLevel(flyingPlayer.fineFoodLevel - foodCost);
-	    					System.out.println("Flying costed "+playerName+" "+foodCost+" Food.");
+	    					if(fff.consoleOutputActivated)
+	    						System.out.println("Flying costed "+playerName+" "+foodCost+" Food.");
 	    				}
 	    				
 	    				//Update last location
@@ -73,7 +75,8 @@ public class HungerMaker implements Runnable {
 	    					||flyingPlayer.thePlayer.getLocation().getBlock().getRelative(BlockFace.SELF).getType() != Material.AIR)
 	    			{
 	    				flyingPlayer.thePlayer.setAllowFlight(false);
-	    				flyingPlayer.thePlayer.sendMessage("You landed.");
+		    			if(fff.playerMessagesActivated)
+		    				flyingPlayer.thePlayer.sendMessage(fff.playerMessageLanded);
 	    				toRemove.add(flyingPlayer);
 	    			}
 	    		}

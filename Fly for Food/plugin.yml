@@ -1,6 +1,6 @@
 name: Fly for Food
 main: at.gehirnstroem.FlyForFood
-version: 0.2.0
+version: 0.3.0
 permissions:
     flyforfood.fly:
         description: Allows a player to use a feather to fly.
